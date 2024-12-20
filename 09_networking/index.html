@@ -33,7 +33,53 @@
 </div>
 <p class="margin">   </p>
 
-<h4>Assignment: [Program something with IOT]</h4>
+<h4>AI Assistant with ESP32 and TFT Screen</h4>
+
+        <h5>Project Overview</h5>
+        <p style="font: 15px Montserrat-Light;">
+            This project documents the development of a physical AI assistant using an ESP32 microcontroller and a TFT screen with SPI protocol. The device is designed to function similarly to voice assistants like Alexa.
+        </p>
+        <p style="font: 15px Montserrat-Light;">
+            In collaboration with Evan Jolley, we developed a Minimum Viable Product (MVP) of an AI assistant.
+        </p>
+        <div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+            <img src="[Insert Image or Video Path]" alt="AI Assistant Demo" style="width: 50vw;">
+        </div>
+        <p style="font: 15px Montserrat-Light;">
+            The AI assistant operates through a series of steps, integrating hardware components with various APIs:
+        </p>
+        <ol style="font: 15px Montserrat-Light;">
+            <li>The interaction begins when the user presses a button and voices a question. Currently, this input is limited to a 5-second duration to ensure system stability.</li>
+            <li>An I2S microphone captures the audio input in .raw format. Custom functions then convert this raw audio data into a .wav file format suitable for further processing.</li>
+            <li>The .wav file is transmitted to OpenAI's Whisper API, a powerful speech-to-text model that transcribes the audio input into text.</li>
+            <li>The resulting transcript is then sent to the Perplexity API for processing. This API was chosen for its unique combination of AI capabilities and access to real-time information, providing comprehensive and up-to-date responses. Evan was also very familiar with the Perplexity API.</li>
+            <li>Once the AI generates a response, it is converted back into audio format using OpenAI's text-to-speech model.</li>
+            <li>In the current implementation, the audio response is sent back to the computer via a serial port connection. Future iterations will incorporate on-device audio playback through an integrated speaker.</li>
+        </ol>
+        <p style="font: 15px Montserrat-Light;">
+            Throughout this process, the TFT screen displays the current operational state, keeping the user informed of the assistant's activities.
+        </p>
+
+        <h5>Technical Challenges and Solutions</h5>
+        <p style="font: 15px Montserrat-Light;">
+            During the development process, we encountered several significant challenges:
+        </p>
+        <ul style="font: 15px Montserrat-Light;">
+            <li><strong>Microphone Implementation:</strong> Integrating and debugging the microphone proved to be a complex task. The microphone was easily affected by outside noise.</li>
+            <li><strong>Audio File Handling:</strong> Working with audio files in C++ presented difficulties, particularly in preparing them for the speech-to-text API. This challenge was compounded by the limited C++ documentation available, compared to more familiar Python resources.</li>
+            <li><strong>Speaker Integration:</strong> Implementing on-device audio playback remains an ongoing challenge, presenting problems in audio processing and hardware integration.</li>
+        </ul>
+
+        <h5>Future Development Plans</h5>
+        <p style="font: 15px Montserrat-Light;">
+            To further enhance the AI assistant, the above technical solutions need to be addressed. Evan's final project will be heavily inspired by this MVP.
+        </p>
+        <pre style="background-color: #f8f9fa; padding: 15px; border: 1px solid #ddd;">
+<code>
+// Add project code here
+</code>
+        </pre>
+    </div>
 
 
 

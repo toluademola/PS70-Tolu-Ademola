@@ -23,8 +23,126 @@
 <div class="textcontainer">
 <p class="margin"></p>
 
-<h3>Final Project: [INSERT FINAL PROJECT HERE]</h3>
+<h3>Final Project: Contactless Music Player]</h3>
+<h4>Using RFID Sensors to Control Music</h4>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <video controls style="width: 50vw;">
+        <source src="[Insert Video Path]" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
 
+<div style="display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap; margin: 20px 0;">
+  <img src="[Insert Image Path 1]" alt="Final Project Image 1" style="width: 45%; margin-bottom: 20px;">
+  <img src="[Insert Image Path 2]" alt="Final Project Image 2" style="width: 45%; margin-bottom: 20px;">
+  <img src="[Insert Image Path 3]" alt="Final Project Image 3" style="width: 45%; margin-bottom: 20px;">
+  <img src="[Insert Image Path 4]" alt="Final Project Image 4" style="width: 45%; margin-bottom: 20px;">
+</div>
+
+<h5>Project Overview</h5>
+<p style="font: 15px Montserrat-Light;">
+    This documentation outlines the development process of a contactless music player that uses RFID cards to control song playback on a speaker. The project follows the engineering design process, progressing from initial concept to a fully functional prototype.
+</p>
+
+<h5>Engineering Design Process</h5>
+<p style="font: 15px Montserrat-Light;">
+    The project adhered to the following engineering design process:
+</p>
+<ol style="font: 15px Montserrat-Light;">
+    <li>Brainstorming and Research</li>
+    <li>Material Selection</li>
+    <li>MVP (Minimum Viable Product) Development</li>
+    <li>Iteration and Refinement</li>
+    <li>Final Implementation</li>
+</ol>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <img src="[Insert Image Path]" alt="Engineering Design Process Diagram" style="width: 50vw;">
+</div>
+
+<h5>Material Selection</h5>
+<h6>Exterior Materials</h6>
+<ul style="font: 15px Montserrat-Light;">
+    <li>Plywood: Used for the main body structure</li>
+    <li>Veneer wood: Applied for aesthetic finishing</li>
+    <li>PLA: Used for 3D printed components</li>
+</ul>
+<h6>Interior Materials/Electronics</h6>
+<ul style="font: 15px Montserrat-Light;">
+    <li>ESP32 microcontroller</li>
+    <li>Solderable breadboard</li>
+    <li>Wires</li>
+    <li>MP3 Module and SD Card</li>
+    <li>RFID Module</li>
+    <li>Audio jack cable</li>
+    <li>PLA for 3D printed internal parts</li>
+</ul>
+
+<h5>MVP Development</h5>
+<p style="font: 15px Montserrat-Light;">
+    The initial MVP aimed to create an RFID-controlled music player on a breadboard. The primary goal was to establish a system where each unique RFID tag corresponded to a specific song stored on the SD card.
+</p>
+<p style="font: 15px Montserrat-Light;">
+    Initially, we encountered difficulties with the DFPlayer Mini module. The audio would not play consistently and struggled to read MP3 files from the SD card. To overcome these issues, we transitioned to using the Serial MP3 Modules from DIYables. This module proved more reliable and included a built-in headphone jack, simplifying the audio output process.
+</p>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <img src="[Insert Image Path]" alt="MVP Setup" style="width: 50vw;">
+</div>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <video controls style="width: 50vw;">
+        <source src="[Insert Video Path]" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
+
+<h5>Circuit Design and Code Implementation</h5>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <img src="[Insert Image Path]" alt="Circuit Diagram" style="width: 50vw;">
+</div>
+<pre style="background-color: #f8f9fa; padding: 15px; border: 1px solid #ddd;">
+<code>
+// Insert MVP Code Here
+// Insert Final MVP Code Here
+</code>
+</pre>
+
+<h5>Building on the MVP</h5>
+<h6>Exterior Design</h6>
+<p style="font: 15px Montserrat-Light;">
+    The exterior design drew inspiration from vintage vinyl players, aiming to blend retro aesthetics with modern technology.
+</p>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <img src="[Insert Image Path]" alt="Hand-Drawn Sketches" style="width: 50vw;">
+    <img src="[Insert Image Path]" alt="Fusion 360 Renderings" style="width: 50vw;">
+</div>
+
+<h6>Fabrication Process</h6>
+<ol style="font: 15px Montserrat-Light;">
+    <li>Laser cut wood parts were designed parametrically using Fusion 360.</li>
+    <li>Post-processing included sanding and filing to remove soot from plywood edges.</li>
+    <li>Components were joined using screws and a power tool, with wood rods used internally for structural support.</li>
+    <li>Wood veneer panels were attached to the front and back using wood glue.</li>
+    <li>Used clamps to help hold the wood pieces together for stronger adhesion.</li>
+    <li>A 3D printed holder was created for the RFID cards.</li>
+</ol>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <img src="[Insert Image Path]" alt="Fabrication Process" style="width: 50vw;">
+</div>
+
+<h6>Electronics Integration</h6>
+<ol style="font: 15px Montserrat-Light;">
+    <li>Transitioned from breadboard to a solderable breadboard for improved reliability.</li>
+    <li>Soldered circuit components onto the solderable breadboard.</li>
+    <li>3D printed a custom holder for the circuit board.</li>
+</ol>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <img src="[Insert Image Path]" alt="Electronics Assembly Process" style="width: 50vw;">
+</div>
+
+<h5>Conclusion</h5>
+<p style="font: 15px Montserrat-Light;">
+    This project demonstrated the successful integration of RFID technology with audio playback, packaged in an aesthetically pleasing, vintage-inspired enclosure. The iterative design process and problem-solving approaches employed throughout the project provided valuable learning experiences in both electronic and mechanical design.
+</p>
+</div>
 
 </div>
 </xmp>

@@ -27,7 +27,104 @@
 
 
 
-<h4>Assignment: Minimum Viable Product for Final Project</h4>
+<h4>Project Documentation: Output Devices and MVP</h4>
+<p style="font: 15px Montserrat-Light;">
+    This documentation outlines the development and testing of two key components for my project: an RFID sensor with an LCD screen and the ESP32 module's ability to play audio files from an SD card module. These experiments were conducted to explore the functionality of these devices and their potential integration into my final project.
+</p>
+
+<h4>Part 1: RFID Sensor with LCD Screen</h4>
+
+<h5>What is an RFID Scanner?</h5>
+<p style="font: 15px Montserrat-Light;">
+    An RFID scanner is a device that uses radio-frequency identification technology to read data stored on RFID tags or cards. These tags contain a unique identifier that can be used for various applications, such as access control, inventory tracking, or identification purposes. The scanner communicates with the tag wirelessly, making it a convenient and efficient tool for data retrieval.
+</p>
+
+<p style="font: 15px Montserrat-Light;">
+    I created an input-output device using the MFRC522 RFID sensor, an LCD screen, and an ESP32 module. The primary goal was to test the functionality of the RFID sensor and ESP32 module, both of which I plan to use in my final project. Additionally, this setup serves as a tool to quickly read and display RFID card IDs throughout the course of my project.
+</p>
+
+<h5>Wiring Diagram</h5>
+<p style="font: 15px Montserrat-Light;">
+    Below is the wiring setup for connecting the MFRC522 RFID sensor, LCD screen, and ESP32 module:
+</p>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <img src="[Insert Image Path]" alt="Wiring diagram for RFID sensor with LCD module" style="width: 50vw;">
+</div>
+
+<h5>Code Implementation</h5>
+<p style="font: 15px Montserrat-Light;">
+    The following code was used to configure the RFID scanner to read card IDs and display them on the LCD screen:
+</p>
+<pre style="background-color: #f8f9fa; padding: 15px; border: 1px solid #ddd;">
+<code>
+// Add your code here with comments explaining each section
+</code>
+</pre>
+
+<h4>Part 2: Playing Audio Files with ESP32</h4>
+
+<h5>Initial Objective</h5>
+<p style="font: 15px Montserrat-Light;">
+    For this part of the project, I aimed to use this week's assignment to create a minimum viable product (MVP) for my final project. Specifically, I wanted to play audio files using the DFPlayer Mini module (see more details on Final Project Page). However, I encountered several challenges with audio playback, which led me to shift my focus toward simply playing music through a speaker connected to the ESP32.
+</p>
+
+<h5>Using an SD Card Module</h5>
+<p style="font: 15px Montserrat-Light;">
+    Instead of relying on the DFPlayer Mini, I opted for a general-purpose SD card module. This allowed me to experiment with playing audio files stored on an SD card.
+</p>
+
+<h5>Wiring Diagram</h5>
+<p style="font: 15px Montserrat-Light;">
+    Here is the wiring setup for connecting the SD card module to the ESP32:
+</p>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <img src="[Insert Image Path]" alt="Wiring diagram for SD card module" style="width: 50vw;">
+</div>
+
+<h5>Code Implementation</h5>
+<p style="font: 15px Montserrat-Light;">
+    The following code was used to implement a simple "Hello" music player. The audio played was not sourced from the SD card but rather from an array representing sound file amplitudes:
+</p>
+<pre style="background-color: #f8f9fa; padding: 15px; border: 1px solid #ddd;">
+<code>
+// Add your code here with comments explaining each section
+</code>
+</pre>
+
+<h5>Troubleshooting Audio Playback</h5>
+<p style="font: 15px Montserrat-Light;">
+    Initially, although the code compiled successfully, no audio was produced. With assistance from Bobby, we used an oscilloscope to troubleshoot the issue. It was discovered that while an audio signal was being sent, the headphone jack module was not properly connected to the ESP32. After correcting this wiring issue, we successfully played audio.
+</p>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <img src="[Insert Image Path]" alt="Oscilloscope testing" style="width: 50vw;">
+</div>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <video controls style="width: 50vw;">
+        <source src="[Insert Video Path]" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
+
+<h5>Transitioning to SD Card Audio Playback</h5>
+<p style="font: 15px Montserrat-Light;">
+    After resolving initial playback issues, I transitioned to playing audio directly from files stored on the SD card module. While this approach worked, I encountered choppy playback when using WAV files.
+</p>
+
+<h5>Observations</h5>
+<ul style="font: 15px Montserrat-Light;">
+    <li>The WAV file playback was inconsistent due to potential issues with buffering or processing speed.</li>
+    <li>Further optimization will be needed if this method is used in my final project.</li>
+</ul>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <img src="[Insert Image Path]" alt="SD card module" style="width: 50vw;">
+</div>
+<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
+    <video controls style="width: 50vw;">
+        <source src="[Insert Video Path]" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+</div>
+</div>
 
 
 </div>

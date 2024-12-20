@@ -2,9 +2,13 @@ body {
     font: 18px "Montserrat-Bold";
     line-height: 1.8;
     color: #000000;
-    background-color: #dcdcdc;
+    background-image: url('./Triangle_Background.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
     padding-top: 0px !important;
 }
+
 a{
   text-decoration: none;
 }
@@ -23,7 +27,7 @@ a{
   padding: 2% 10%;;
 }
 .icon{
-  font: 18px "Montserrat-Light";
+  font: 16px "Montserrat-Light";
   transform: scale(1);
   transition: transform 1s;
 }

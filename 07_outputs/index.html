@@ -48,18 +48,117 @@
     Below is the wiring setup for connecting the MFRC522 RFID sensor, LCD screen, and ESP32 module:
 </p>
 <div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
-    <img src="[Insert Image Path]" alt="Wiring diagram for RFID sensor with LCD module" style="width: 50vw;">
+    <img src=".\RFID Senror with LED\ESP32_RFID_reader.png" alt="Wiring diagram for RFID sensor with LCD module" style="width: 50vw;">
 </div>
 
 <h5>Code Implementation</h5>
 <p style="font: 15px Montserrat-Light;">
     The following code was used to configure the RFID scanner to read card IDs and display them on the LCD screen:
 </p>
-<pre style="background-color: #f8f9fa; padding: 15px; border: 1px solid #ddd;">
+<div style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9; padding: 15px; margin: 20px;">
+    <pre style="font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5;">
 <code>
-// Add your code here with comments explaining each section
+    #include <LiquidCrystal.h>
+        #include <SPI.h>
+        #include <MFRC522.h>
+        
+        // Initialize LiquidCrystal object: RS, E, D4, D5, D6, D7
+        LiquidCrystal lcd(12, 11, 10, 9, 8, 7); // Update these pins to match your wiring
+        
+        // Define ESP32 GPIO Pins
+        #define SS_PIN 5     // ESP32 GPIO pin for SPI SS
+        #define RST_PIN 22   // ESP32 GPIO pin for Reset
+        #define LED_G 26     // Green LED
+        #define LED_R 27     // Red LED
+        #define RELAY1 25    // Relay control
+        
+        // MFRC522 Object
+        MFRC522 mfrc522(SS_PIN, RST_PIN);
+        
+        void setup() {
+          // Initialize LCD
+          lcd.begin(16, 2); // Set up the LCD's number of columns and rows
+          lcd.print("ZENO MODIFF");
+          lcd.setCursor(0, 1);
+          lcd.print("RFID LOCK");
+          delay(2000);
+          lcd.clear();
+        
+          // Initialize SPI bus and RFID reader
+          SPI.begin();   // Use default ESP32 SPI pins: SCK (GPIO18), MISO (GPIO19), MOSI (GPIO23)
+          mfrc522.PCD_Init();
+        
+          // Configure GPIO Pins
+          pinMode(LED_G, OUTPUT);
+          pinMode(LED_R, OUTPUT);
+          pinMode(RELAY1, OUTPUT);
+        
+          // Ensure all outputs are off initially
+          digitalWrite(LED_G, LOW);
+          digitalWrite(LED_R, LOW);
+          digitalWrite(RELAY1, LOW);
+        }
+        
+        void loop() {
+          lcd.clear();
+          lcd.print("PLACE YOUR");
+          lcd.setCursor(0, 1);
+          lcd.print("RFID TAG");
+          delay(100);
+          lcd.clear();
+        
+          // Check for a new card
+          if (!mfrc522.PICC_IsNewCardPresent()) {
+            return;
+          }
+        
+          // Attempt to read the card
+          if (!mfrc522.PICC_ReadCardSerial()) {
+            return;
+          }
+        
+          // Read and format the card UID
+          String content = "";
+          for (byte i = 0; i < mfrc522.uid.size; i++) {
+            content.concat(String(mfrc522.uid.uidByte[i] < 0x10 ? " 0" : " "));
+            content.concat(String(mfrc522.uid.uidByte[i], HEX));
+          }
+          content.toUpperCase();
+        
+          // Check if the card UID matches the authorized UID
+          if (content.substring(1) == "F9 F5 55 14") {
+            lcd.clear();
+            lcd.print("AUTHORIZED ACCESS");
+            delay(2000);
+            lcd.clear();
+        
+            // Activate relay and green LED
+            digitalWrite(RELAY1, HIGH);
+            digitalWrite(LED_G, HIGH);
+            delay(6000);
+        
+            // Turn off relay and green LED
+            digitalWrite(RELAY1, LOW);
+            digitalWrite(LED_G, LOW);
+            delay(1000);
+          } else {
+            // Unauthorized access
+            lcd.clear();
+            lcd.print("UNAUTHORIZED");
+            delay(2000);
+            lcd.clear();
+        
+            // Flash red LED
+            digitalWrite(LED_R, HIGH);
+            delay(2000);
+            digitalWrite(LED_R, LOW);
+            delay(1000);
+          }
+        }
+    
 </code>
-</pre>
+    </pre>
+</div>
 
 <h4>Part 2: Playing Audio Files with ESP32</h4>
 
@@ -78,29 +177,56 @@
     Here is the wiring setup for connecting the SD card module to the ESP32:
 </p>
 <div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
-    <img src="[Insert Image Path]" alt="Wiring diagram for SD card module" style="width: 50vw;">
+    <img src=".\RFID Senror with LED\IMG_2007.JPEG" alt="Wiring diagram for SD card module" style="width: 50vw;">
 </div>
 
 <h5>Code Implementation</h5>
 <p style="font: 15px Montserrat-Light;">
     The following code was used to implement a simple "Hello" music player. The audio played was not sourced from the SD card but rather from an array representing sound file amplitudes:
 </p>
-<pre style="background-color: #f8f9fa; padding: 15px; border: 1px solid #ddd;">
+<div style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9; padding: 15px; margin: 20px;">
+    <pre style="font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5;">
 <code>
-// Add your code here with comments explaining each section
+    #include "sound.h"
+    const unsigned int sample_rate = 48000;
+    hw_timer_t *My_timer = NULL;
+    volatile int i = 0;
+    void IRAM_ATTR onTimer(){
+      if (i == 54066){
+        i = 0;
+      }
+      dacWrite(25, hello[i]);
+      i++;
+    }
+    void setup() {
+      pinMode(25, OUTPUT);
+      My_timer = timerBegin(1000000);
+      timerAttachInterrupt(My_timer, &onTimer);
+      timerAlarm(My_timer, 1000000/sample_rate, true,0);
+      // timerAlarmEnable(My_timer); //Just Enable
+    }
+    
+    void loop() {
+      for (int i = 0; i < 54066; i++)
+      {
+          dacWrite(25, hello[i]);
+        }
+    }    
+    
 </code>
-</pre>
+    </pre>
+</div>
 
 <h5>Troubleshooting Audio Playback</h5>
 <p style="font: 15px Montserrat-Light;">
     Initially, although the code compiled successfully, no audio was produced. With assistance from Bobby, we used an oscilloscope to troubleshoot the issue. It was discovered that while an audio signal was being sent, the headphone jack module was not properly connected to the ESP32. After correcting this wiring issue, we successfully played audio.
 </p>
 <div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
-    <img src="[Insert Image Path]" alt="Oscilloscope testing" style="width: 50vw;">
+    <img src=".\RFID Senror with LED\IMG_1999.JPEG" alt="Oscilloscope testing" style="width: 20vw;">
 </div>
 <div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
     <video controls style="width: 50vw;">
-        <source src="[Insert Video Path]" type="video/mp4">
+        <source src=".\RFID Senror with LED\Hello_Audio(2).MP4" type="video/mp4">
         Your browser does not support the video tag.
     </video>
 </div>
@@ -115,17 +241,86 @@
     <li>The WAV file playback was inconsistent due to potential issues with buffering or processing speed.</li>
     <li>Further optimization will be needed if this method is used in my final project.</li>
 </ul>
-<div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
-    <img src="[Insert Image Path]" alt="SD card module" style="width: 50vw;">
-</div>
+
 <div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
     <video controls style="width: 50vw;">
-        <source src="[Insert Video Path]" type="video/mp4">
+        <source src=".\RFID Senror with LED\IMG_2006.MP4" type="video/mp4">
         Your browser does not support the video tag.
     </video>
 </div>
 </div>
 
+<h5>Code Implementation of WAV File Player</h5>
+<p style="font: 15px Montserrat-Light;">
+    The following code was used to play "Not Like Us" Wav file. The audio played was  sourced from the SD card however the output was not sampled correctly from the Not Like US Audio file. We tried to troubleshoot this a number of ways, including using buffer to help the program read and write the audio file at the correct sample.
+<div style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9; padding: 15px; margin: 20px;">
+    <pre style="font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5;">
+<code>
+    #include <SD.h>
+        #include <SPI.h>
+        
+        File wavFile;
+        unsigned int sampleRate = 0;
+        
+        void playWav(const char *filename) {
+          wavFile = SD.open(filename);
+          if (!wavFile) {
+            Serial.println("Failed to open WAV file!");
+            return;
+          }
+        
+          unsigned char header[44];
+          if (wavFile.read(header, 44) < 44) {
+            Serial.println("Invalid WAV file!");
+            wavFile.close();
+            return;
+          }
+        
+          sampleRate = header[24] | (header[25] << 8) | (header[26] << 16) | (header[27] << 24);
+          Serial.print("Sample Rate: ");
+          Serial.println(sampleRate);
+        
+          uint8_t buffer[512];
+          while (wavFile.available()) {
+            size_t bytesRead = wavFile.read(buffer, sizeof(buffer));
+            for (size_t i = 0; i < bytesRead; i += 4) {
+              // Extract left and right channels (16-bit each)
+              int16_t left = buffer[i] | (buffer[i + 1] << 8);
+              int16_t right = buffer[i + 2] | (buffer[i + 3] << 8);
+        
+              // Mix stereo to mono by averaging
+              int16_t mixed = (left + right) / 2;
+        
+              // Scale 16-bit sample to 8-bit for DAC
+              uint8_t scaledSample = (mixed >> 8) + 128;
+        
+              dacWrite(25, scaledSample);
+        
+              delayMicroseconds(1000000 / sampleRate);
+            }
+          }
+        
+          wavFile.close();
+          Serial.println("Playback finished.");
+        }
+        
+        void setup() {
+          Serial.begin(115200);
+          if (!SD.begin(5)) {
+            Serial.println("SD card initialization failed!");
+            return;
+          }
+        
+          playWav("/Not_Like_Us.wav");
+        }
+        
+        void loop() {
+          // Do nothing
+        }
+        
+</code>
+    </pre>
+</div>
 
 </div>
 </xmp>

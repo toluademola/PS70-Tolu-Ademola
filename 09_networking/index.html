@@ -28,7 +28,7 @@
 
 <p class="margin">   </p>
 <div class="flexrow">
-  <a id="btn" href="wk9.zip" download>Download my files from this week!
+  <a id="btn" href=".\alexa2.ino" download>Download the file from this week!
   </a>
 </div>
 <p class="margin">   </p>
@@ -43,7 +43,7 @@
             In collaboration with Evan Jolley, we developed a Minimum Viable Product (MVP) of an AI assistant.
         </p>
         <div style="display: flex; justify-content: center; align-items: center; margin: 20px 0;">
-            <img src="[Insert Image or Video Path]" alt="AI Assistant Demo" style="width: 50vw;">
+            <img src=".\IMG_1437.JPEG" alt="AI Assistant Demo" style="width: 50vw;">
         </div>
         <p style="font: 15px Montserrat-Light;">
             The AI assistant operates through a series of steps, integrating hardware components with various APIs:
@@ -75,11 +75,904 @@
             To further enhance the AI assistant, the above technical solutions need to be addressed. Evan's final project will be heavily inspired by this MVP.
         </p>
         <pre style="background-color: #f8f9fa; padding: 15px; border: 1px solid #ddd;">
-<code>
-// Add project code here
-</code>
-        </pre>
-    </div>
+          <div style="max-height: 400px; overflow-y: auto; border: 1px solid #ccc; border-radius: 5px; background-color: #f9f9f9; padding: 15px; margin: 20px;">
+            <pre style="font-family: 'Courier New', monospace; font-size: 14px; line-height: 1.5;">
+        <code>
+            
+  #include 
+  #include 
+  #include 
+  #include 
+  #include 
+  #include 
+  #include 
+  #include 
+  #include "driver/i2s.h"
+  #include "freertos/queue.h"
+
+  // =============== Pin Definitions ===============
+  // Microphone pins
+  #define I2S_WS 15   // LRCL
+  #define I2S_SD 32   // DOUT
+  #define I2S_SCK 14  // BCLK
+  #define BUTTON_PIN 4
+
+  // Speaker pins
+  #define I2S_SPKR_BCLK 14
+  #define I2S_SPKR_LRC  15
+  #define I2S_SPKR_DIN  21
+
+  // TFT Configuration
+  #define TFT_MOSI 22
+  #define TFT_SCLK 18
+  #define TFT_CS   5
+  #define TFT_DC   2
+  #define TFT_RST  13
+  #define TFT_MISO 19
+
+  // Audio Configuration
+  #define MIC_SAMPLE_RATE 16000
+  #define SPEAKER_SAMPLE_RATE 24000
+  #define SAMPLE_BITS 16
+  #define BUFFER_SIZE 1024
+  #define RECORD_TIME 5
+
+  // Screen Configuration
+  #define SCREEN_WIDTH 320
+  #define SCREEN_HEIGHT 240
+  #define STATUS_HEIGHT 40
+  #define WIFI_ICON_SIZE 16
+  #define TEXT_COLOR 0x07E0 // Matrix green
+  #define BG_COLOR TFT_BLACK
+
+  // Network Configuration
+  const char ssid = "MAKERSPACE";
+  const char password = "12345678";
+  const char chatgpt_token = "api_key";
+  const char perplexity_token = "api_key";
+
+  // =============== I2S Configurations ===============
+  // Microphone I2S Config (I2S_NUM_0)
+  const i2s_config_t i2s_mic_config = {
+      .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
+      .sample_rate = MIC_SAMPLE_RATE,
+      .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+      .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+      .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+      .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+      .dma_buf_count = 4,
+      .dma_buf_len = 1024,
+      .use_apll = false,
+      .tx_desc_auto_clear = false,
+      .fixed_mclk = 0
+  };
+
+  const i2s_pin_config_t i2s_mic_pins = {
+      .bck_io_num = I2S_SCK,
+      .ws_io_num = I2S_WS,
+      .data_out_num = I2S_PIN_NO_CHANGE,
+      .data_in_num = I2S_SD
+  };
+
+  // Speaker I2S Config (I2S_NUM_1)
+  const i2s_config_t i2s_speaker_config = {
+      .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+      .sample_rate = SPEAKER_SAMPLE_RATE,
+      .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+      .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
+      .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+      .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
+      .dma_buf_count = 8,
+      .dma_buf_len = 1024,
+      .use_apll = false,
+      .tx_desc_auto_clear = true,
+      .fixed_mclk = 0
+  };
+
+  const i2s_pin_config_t i2s_speaker_pins = {
+      .bck_io_num = I2S_SPKR_BCLK,
+      .ws_io_num = I2S_SPKR_LRC,
+      .data_out_num = I2S_SPKR_DIN,
+      .data_in_num = I2S_PIN_NO_CHANGE
+  };
+
+  // =============== Function Declarations ===============
+  void writeWAVHeader(File &file, uint32_t dataSize);
+  void processI2SSamples(int32_t samples, size_t count);
+  void convertRawToWav(uint32_t rawDataSize);
+  void recordAudio();
+  void sendToSpeechAPI();
+  void sendToPerplexity(const String& query);
+  void textToSpeech(const String& text);
+  void initMicI2S();
+  void initSpeakerI2S();
+  void playAudioFile(const char filename);
+
+  // =============== I2S Initialization ===============
+  void initMicI2S() {
+      esp_err_t err = i2s_driver_install(I2S_NUM_0, &i2s_mic_config, 0, NULL);
+      if (err != ESP_OK) {
+          Serial.println("Failed to install I2S driver for microphone");
+          return;
+      }
+
+      err = i2s_set_pin(I2S_NUM_0, &i2s_mic_pins);
+      if (err != ESP_OK) {
+          Serial.println("Failed to set I2S pins for microphone");
+          return;
+      }
+
+      err = i2s_set_clk(I2S_NUM_0, MIC_SAMPLE_RATE, I2S_BITS_PER_SAMPLE_32BIT, I2S_CHANNEL_MONO);
+      if (err != ESP_OK) {
+          Serial.println("Failed to set I2S clock for microphone");
+          return;
+      }
+  }
+
+  void initSpeakerI2S() {
+      // Uninstall I2S driver for microphone first since we're sharing pins
+      i2s_driver_uninstall(I2S_NUM_0);
+
+      esp_err_t err = i2s_driver_install(I2S_NUM_1, &i2s_speaker_config, 0, NULL);
+      if (err != ESP_OK) {
+          Serial.println("Failed to install I2S driver for speaker");
+          return;
+      }
+
+      err = i2s_set_pin(I2S_NUM_1, &i2s_speaker_pins);
+      if (err != ESP_OK) {
+          Serial.println("Failed to set I2S pins for speaker");
+          return;
+      }
+
+      // Reinitialize microphone I2S
+      initMicI2S();
+  }
+
+  // =============== TFT Display Functions ===============
+  class Display;
+
+  // Structure to maintain conversation state
+  struct ConversationState {
+      String query;
+      String response;
+      String currentStatus;
+  };
+
+  class Display {
+  private:
+      TFT_eSPI& tft;
+      ConversationState& conversation;
+      const int WIFI_OFFSET = 20;
+      const int MAIN_TEXT_Y = 50;
+      const int STATUS_Y = 200;
+
+      void drawWifiStatus() {
+          int x = SCREEN_WIDTH - WIFI_ICON_SIZE - WIFI_OFFSET;
+          int y = 10;
+
+          if (WiFi.status() == WL_CONNECTED) {
+              tft.fillRect(x, y + 12, 3, 4, TEXT_COLOR);
+              tft.fillRect(x + 4, y + 8, 3, 8, TEXT_COLOR);
+              tft.fillRect(x + 8, y + 4, 3, 12, TEXT_COLOR);
+              tft.fillRect(x + 12, y, 3, 16, TEXT_COLOR);
+          } else {
+              tft.drawLine(x, y, x + WIFI_ICON_SIZE, y + WIFI_ICON_SIZE, TEXT_COLOR);
+              tft.drawLine(x + WIFI_ICON_SIZE, y, x, y + WIFI_ICON_SIZE, TEXT_COLOR);
+          }
+      }
+
+  public:
+      Display(TFT_eSPI& tft_ref, ConversationState& conv_ref) 
+          : tft(tft_ref), conversation(conv_ref) {}
+
+      void init() {
+          tft.init();
+          tft.setRotation(1);
+          tft.fillScreen(BG_COLOR);
+          tft.setTextColor(TEXT_COLOR, BG_COLOR);
+          tft.setTextSize(2);
+          showInitialScreen();
+      }
+
+      void clear() {
+          tft.fillScreen(BG_COLOR);
+      }
+
+      void drawText(const String& text, int x, int y, uint16_t color) {
+          tft.setTextColor(color);
+          tft.setCursor(x, y);
+
+          String currentWord = "";
+          int currentX = x;
+          int currentY = y;
+          const int maxWidth = SCREEN_WIDTH - x - 20;
+
+          for (unsigned int i = 0; i < text.length(); i++) {
+              if (text[i] == ' ' || i == text.length() - 1) {
+                  if (i == text.length() - 1 && text[i] != ' ') {
+                      currentWord += text[i];
+                  }
+
+                  int wordWidth = currentWord.length()  12;
+                  if (currentX + wordWidth > x + maxWidth) {
+                      currentY += 25;
+                      currentX = x;
+                      tft.setCursor(currentX, currentY);
+                  }
+
+                  tft.print(currentWord + " ");
+                  currentX += wordWidth + 6;
+                  currentWord = "";
+              } else {
+                  currentWord += text[i];
+              }
+          }
+      }
+
+      void showInitialScreen() {
+          clear();
+          drawWifiStatus();
+          drawText("How can I help?", 10, MAIN_TEXT_Y, TEXT_COLOR);
+      }
+
+      void showListening() {
+          clear();
+          drawWifiStatus();
+          drawText("Listening...", 10, MAIN_TEXT_Y, TEXT_COLOR);
+      }
+
+      void showTranscribing() {
+          clear();
+          drawWifiStatus();
+          drawText("Transcribing...", 10, MAIN_TEXT_Y, TEXT_COLOR);
+      }
+
+      void showTranscript(const String& transcript) {
+          clear();
+          drawWifiStatus();
+          drawText(transcript, 10, MAIN_TEXT_Y, TEXT_COLOR);
+          drawText("Waiting for AI response...", 10, MAIN_TEXT_Y + 60, TEXT_COLOR);
+      }
+
+      void showResponse(const String& transcript, const String& response) {
+          clear();
+          drawWifiStatus();
+          drawText(transcript, 10, MAIN_TEXT_Y, TEXT_COLOR);
+          drawText(response, 10, MAIN_TEXT_Y + 60, TEXT_COLOR);
+      }
+
+      void showProgressBar(int percentage) {
+          const int BAR_WIDTH = 200;
+          const int BAR_HEIGHT = 10;
+          const int BAR_X = (SCREEN_WIDTH - BAR_WIDTH) / 2;
+          const int BAR_Y = STATUS_Y;
+
+          tft.drawRect(BAR_X, BAR_Y, BAR_WIDTH, BAR_HEIGHT, TEXT_COLOR);
+          int fillWidth = (BAR_WIDTH  percentage) / 100;
+          tft.fillRect(BAR_X, BAR_Y, fillWidth, BAR_HEIGHT, TEXT_COLOR);
+
+          tft.setTextColor(TEXT_COLOR);
+          tft.setCursor(BAR_X + BAR_WIDTH + 10, BAR_Y);
+          tft.print(String(percentage) + "%");
+      }
+  };
+
+  // =============== Global Objects ===============
+  TFT_eSPI tft = TFT_eSPI();
+  int16_t sBuffer[BUFFER_SIZE];
+  ConversationState conversation;
+  Display display(tft, conversation);
+
+  // =============== WAV File Handling ===============
+  void writeWAVHeader(File &file, uint32_t dataSize) {
+      uint32_t fileSize = dataSize + 36;
+      uint16_t numChannels = 1;
+      uint32_t sampleRate = MIC_SAMPLE_RATE;
+      uint16_t bitsPerSample = SAMPLE_BITS;
+      uint32_t byteRate = sampleRate  numChannels  bitsPerSample / 8;
+      uint16_t blockAlign = numChannels  bitsPerSample / 8;
+
+      file.write((const uint8_t)"RIFF", 4);
+      file.write((const uint8_t)&fileSize, 4);
+      file.write((const uint8_t)"WAVE", 4);
+      file.write((const uint8_t)"fmt ", 4);
+      uint32_t fmtSize = 16;
+      file.write((const uint8_t)&fmtSize, 4);
+      uint16_t audioFormat = 1;
+      file.write((const uint8_t)&audioFormat, 2);
+      file.write((const uint8_t)&numChannels, 2);
+      file.write((const uint8_t)&sampleRate, 4);
+      file.write((const uint8_t)&byteRate, 4);
+      file.write((const uint8_t)&blockAlign, 2);
+      file.write((const uint8_t)&bitsPerSample, 2);
+      file.write((const uint8_t)"data", 4);
+      file.write((const uint8_t)&dataSize, 4);
+  }
+
+  // =============== Audio Processing ===============
+  void processI2SSamples(int32_t samples, size_t count) {
+      for (size_t i = 0; i < count; i++) {
+          sBuffer[i] = samples[i] >> 16;
+      }
+  }
+
+  void convertRawToWav(uint32_t rawDataSize) {
+      File rawFile = SPIFFS.open("/recording.raw", FILE_READ);
+      File wavFile = SPIFFS.open("/recording.wav", FILE_WRITE);
+      if (!rawFile || !wavFile) return;
+
+      writeWAVHeader(wavFile, rawDataSize);
+      uint8_t buffer[1024];
+      size_t bytesRead;
+      while ((bytesRead = rawFile.read(buffer, sizeof(buffer))) > 0) {
+          wavFile.write(buffer, bytesRead);
+      }
+
+      rawFile.close();
+      wavFile.close();
+      SPIFFS.remove("/recording.raw");
+  }
+
+  void recordAudio() {
+      Serial.println("Recording...");
+      display.showListening();
+
+      File file = SPIFFS.open("/recording.raw", FILE_WRITE);
+      if (!file) {
+          Serial.println("Failed to open file for recording");
+          return;
+      }
+
+      size_t bytesRead = 0;
+      unsigned long startTime = millis();
+      unsigned long sampleCount = 0;
+      i2s_zero_dma_buffer(I2S_NUM_0);
+
+      // Add a buffer for temporary storage
+      int32_t temp_buffer = (int32_t)malloc(BUFFER_SIZE  sizeof(int32_t));
+      if (!temp_buffer) {
+          Serial.println("Failed to allocate temporary buffer");
+          file.close();
+          return;
+      }
+
+      while (millis() - startTime < RECORD_TIME  1000 && digitalRead(BUTTON_PIN) == LOW) {
+          // Read from I2S
+          i2s_read(I2S_NUM_0, temp_buffer, sizeof(int32_t)  BUFFER_SIZE, &bytesRead, portMAX_DELAY);
+          if (bytesRead > 0) {
+              // Process samples without printing to Serial
+              processI2SSamples(temp_buffer, bytesRead / sizeof(int32_t));
+              // Write processed samples to file
+              file.write((const uint8_t)sBuffer, bytesRead / 2);
+              sampleCount += (bytesRead / sizeof(int32_t));
+          }
+      }
+
+      free(temp_buffer);
+      file.close();
+
+      Serial.printf("Recorded %lu samples\n", sampleCount);
+
+      display.showTranscribing();
+
+      convertRawToWav(sampleCount  sizeof(int16_t));
+  }
+
+  void playAudioFile(const char filename) {
+      File file = SPIFFS.open(filename, FILE_READ);
+      if (!file) {
+          Serial.println("Failed to open file for playback");
+          return;
+      }
+
+      // Skip WAV header if present
+      if (strstr(filename, ".wav") != NULL) {
+          file.seek(44);
+      }
+
+      display.showResponse(conversation.query, "Playing audio...");
+
+      const size_t bufferSize = 1024;
+      uint8_t buffer = (uint8_t)malloc(bufferSize);
+      if (!buffer) {
+          Serial.println("Failed to allocate playback buffer");
+          file.close();
+          return;
+      }
+
+      size_t bytesRead;
+      while ((bytesRead = file.read(buffer, bufferSize)) > 0) {
+          size_t bytesWritten = 0;
+          esp_err_t result = i2s_write(I2S_NUM_1, buffer, bytesRead, &bytesWritten, portMAX_DELAY);
+
+          if (result != ESP_OK) {
+              Serial.printf("Failed to write to I2S: %d\n", result);
+              break;
+          }
+      }
+
+      free(buffer);
+      file.close();
+
+      display.showResponse(conversation.query, "Playback complete");
+  }
+
+  // =============== API Communication ===============
+  void sendToSpeechAPI() {
+    Serial.println("Starting speech to text conversion...");
+    display.showTranscribing();
+
+    WiFiClientSecure client = new WiFiClientSecure;
+    if (!client) {
+      Serial.println("Failed to create client");
+      return;
+    }
+    client->setInsecure();
+
+    File checkFile = SPIFFS.open("/recording.wav", "r");
+    if (!checkFile) {
+      Serial.println("Failed to open WAV file for checking");
+      delete client;
+      return;
+    }
+    size_t fileSize = checkFile.size();
+    Serial.printf("WAV file size: %d bytes\n", fileSize);
+    checkFile.close();
+
+    Serial.println("Connecting to OpenAI API...");
+    if (!client->connect("api.openai.com", 443)) {
+      Serial.println("Connection failed!");
+      delete client;
+      return;
+    }
+    Serial.println("Connected to OpenAI API");
+
+    String boundary = "WebKitFormBoundaryweDs3434dS";
+    String startBoundary = "--" + boundary + "\r\n";
+    String endBoundary = "\r\n--" + boundary + "--\r\n";
+
+    File audioFile = SPIFFS.open("/recording.wav", "r");
+    if (!audioFile) {
+      Serial.println("Failed to open WAV file for sending");
+      delete client;
+      return;
+    }
+
+    size_t contentLength = startBoundary.length() +
+      String("Content-Disposition: form-data; name=\"model\"\r\n\r\nwhisper-1\r\n").length() +
+      startBoundary.length() +
+      String("Content-Disposition: form-data; name=\"file\"; filename=\"recording.wav\"\r\nContent-Type: audio/wav\r\n\r\n").length() +
+      fileSize + endBoundary.length();
+
+    Serial.printf("Content length calculated: %d bytes\n", contentLength);
+
+    // Send HTTP headers
+    Serial.println("Sending HTTP headers...");
+    client->println("POST /v1/audio/transcriptions HTTP/1.1");
+    client->println("Host: api.openai.com");
+    client->println("Authorization: Bearer " + String(chatgpt_token));
+    client->println("Content-Type: multipart/form-data; boundary=" + boundary);
+    client->print("Content-Length: ");
+    client->println(contentLength);
+    client->println();
+
+    // Send form data
+    Serial.println("Sending form data...");
+    client->print(startBoundary);
+    client->print("Content-Disposition: form-data; name=\"model\"\r\n\r\n");
+    client->print("whisper-1\r\n");
+    client->print(startBoundary);
+    client->print("Content-Disposition: form-data; name=\"file\"; filename=\"recording.wav\"\r\n");
+    client->print("Content-Type: audio/wav\r\n\r\n");
+
+    const size_t bufSize = 1024;
+    uint8_t buf = (uint8_t)malloc(bufSize);
+    if (!buf) {
+      Serial.println("Failed to allocate buffer");
+      audioFile.close();
+      delete client;
+      return;
+    }
+
+    Serial.println("Sending audio file data...");
+    size_t totalBytesSent = 0;
+    size_t bytesRead;
+    while ((bytesRead = audioFile.read(buf, bufSize)) > 0) {
+      client->write(buf, bytesRead);
+      totalBytesSent += bytesRead;
+    }
+    Serial.printf("Total bytes sent: %d\n", totalBytesSent);
+
+    free(buf);
+    audioFile.close();
+    client->print(endBoundary);
+    Serial.println("Finished sending request");
+
+    String line;
+    bool headersEnd = false;
+    unsigned long timeout = millis() + 10000;
+    bool transcriptionFound = false;
+
+    Serial.println("Reading response...");
+    while (client->connected() && millis() < timeout && !transcriptionFound) {
+      if (client->available()) {
+        line = client->readStringUntil('\n');
+        Serial.println("Response line: " + line);  // Print each line of response
+
+        if (!headersEnd) {
+          if (line == "\r") {
+            headersEnd = true;
+            Serial.println("Headers ended, looking for transcription...");
+          }
+        } else if (line.indexOf("\"text\"") != -1) {
+          int startQuote = line.indexOf("\"", line.indexOf(":")) + 1;
+          int endQuote = line.lastIndexOf("\"");
+          if (startQuote != -1 && endQuote != -1) {
+            String transcription = line.substring(startQuote, endQuote);
+            Serial.println("Transcription found: " + transcription);
+
+            conversation.query = transcription;
+            display.showTranscript(transcription);
+
+            // Send to Perplexity
+            sendToPerplexity(transcription);
+            transcriptionFound = true;
+          }
+        }
+      }
+    }
+
+    if (!transcriptionFound) {
+      Serial.println("Timeout or error occurred - no transcription found");
+    }
+
+    while (client->available()) client->read();
+    delete client;
+    Serial.println("Speech to text conversion completed");
+  }
+
+  void sendToPerplexity(const String& query) {
+      WiFiClientSecure client = new WiFiClientSecure;
+      if (!client) {
+          display.showResponse(query, "Error: Failed to create client");
+          return;
+      }
+      client->setInsecure();
+
+      if (!client->connect("api.perplexity.ai", 443)) {
+          display.showResponse(query, "Error: Connection failed");
+          delete client;
+          return;
+      }
+
+      // Prepare JSON payload
+      String payload = "{";
+      payload += "\"model\":\"llama-3.1-sonar-small-128k-online\",";
+      payload += "\"messages\":[";
+      payload += "{\"role\":\"system\",\"content\":\"Be precise and concise.\"},";
+      payload += "{\"role\":\"user\",\"content\":\"" + query + "\"}";
+      payload += "],";
+      payload += "\"temperature\":0.2,";
+      payload += "\"top_p\":0.9,";
+      payload += "\"stream\":false}";
+
+      // Send request
+      client->println("POST /chat/completions HTTP/1.1");
+      client->println("Host: api.perplexity.ai");
+      client->println("Authorization: Bearer " + String(perplexity_token));
+      client->println("Content-Type: application/json");
+      client->print("Content-Length: ");
+      client->println(payload.length());
+      client->println();
+      client->println(payload);
+
+      // Read response
+      display.showTranscript(query);
+      String line;
+      bool headersEnd = false;
+      String jsonResponse;
+      unsigned long timeout = millis() + 10000;
+
+      while (client->connected() && millis() < timeout) {
+          if (client->available()) {
+              line = client->readStringUntil('\n');
+              if (!headersEnd) {
+                  if (line == "\r") headersEnd = true;
+              } else {
+                  jsonResponse += line;
+                  jsonResponse += '\n';
+              }
+          }
+      }
+
+      // Parse response
+      DynamicJsonDocument doc(4096);
+      DeserializationError error = deserializeJson(doc, jsonResponse);
+
+      if (!error) {
+          if (doc["choices"][0]["message"]["content"].isNull()) {
+              display.showResponse(query, "Error: No response from AI");
+              return;
+          }
+
+          String response = doc["choices"][0]["message"]["content"].as();
+          Serial.println("AI Response: " + response);
+
+          display.showResponse(query, response);
+          textToSpeech(response);
+      } else {
+          display.showResponse(query, "Error: Failed to parse AI response");
+      }
+
+      while (client->available()) client->read();
+      delete client;
+  }
+
+  void textToSpeech(const String& text) {
+      // Ensure SPIFFS has enough space
+      if (SPIFFS.totalBytes() - SPIFFS.usedBytes() < 1024  1024) { // 1MB minimum
+          SPIFFS.format(); // Format if too full
+      }
+
+      if (text.length() > 4096) {
+          display.showResponse(conversation.query, "Error: Text too long");
+          return;
+      }
+
+      // Clean up existing files
+      if (SPIFFS.exists("/output.mp3")) {
+          SPIFFS.remove("/output.mp3");
+      }
+
+      WiFiClientSecure client = new WiFiClientSecure;
+      if (!client) {
+          display.showResponse(conversation.query, "Error: Client creation failed");
+          return;
+      }
+      client->setInsecure();
+
+      // Increase timeout for larger responses
+      client->setTimeout(20); // 20 seconds timeout
+
+      if (!client->connect("api.openai.com", 443)) {
+          display.showResponse(conversation.query, "Error: Connection failed");
+          delete client;
+          return;
+      }
+
+      // Clean and prepare text
+      String escapedText = text;
+      escapedText.replace("\"", "\\"");
+      escapedText.replace("\n", " ");
+      escapedText.replace("\r", " ");
+
+      String payload = "{\"model\":\"tts-1\",\"voice\":\"onyx\",\"input\":\"" + escapedText + "\",\"speed\":1.0}";
+
+      client->println("POST /v1/audio/speech HTTP/1.1");
+      client->println("Host: api.openai.com");
+      client->println("Authorization: Bearer " + String(chatgpt_token));
+      client->println("Content-Type: application/json");
+      client->println("Accept: audio/mpeg");
+      client->print("Content-Length: ");
+      client->println(payload.length());
+      client->println();
+      client->println(payload);
+
+      // Read response with timeout
+      unsigned long headerTimeout = millis() + 10000;
+      int contentLength = -1;
+      bool isChunked = false;
+      String line;
+
+      while (millis() < headerTimeout && client->connected()) {
+          if (client->available()) {
+              line = client->readStringUntil('\n');
+              if (line.startsWith("Content-Length: ")) {
+                  contentLength = line.substring(16).toInt();
+              }
+              else if (line.indexOf("Transfer-Encoding: chunked") >= 0) {
+                  isChunked = true;
+              }
+              else if (line == "\r" || line.length() <= 1) {
+                  break;
+              }
+          }
+      }
+
+      // Open file for writing
+      File outputFile = SPIFFS.open("/output.mp3", FILE_WRITE);
+      if (!outputFile) {
+          display.showResponse(conversation.query, "Error: File creation failed");
+          delete client;
+          return;
+      }
+
+      unsigned long dataTimeout = millis() + 30000;
+      size_t totalBytesProcessed = 0;
+      const size_t bufferSize = 512; // Smaller buffer size
+      uint8_t buffer = (uint8_t)malloc(bufferSize);
+
+      if (!buffer) {
+          outputFile.close();
+          delete client;
+          display.showResponse(conversation.query, "Error: Memory allocation failed");
+          return;
+      }
+
+      if (isChunked) {
+          while (millis() < dataTimeout && client->connected()) {
+              String chunkSizeStr = client->readStringUntil('\r');
+              client->read(); // Skip \n
+
+              int chunkSize = (int)strtol(chunkSizeStr.c_str(), NULL, 16);
+              if (chunkSize == 0) break;
+
+              size_t bytesRemaining = chunkSize;
+              while (bytesRemaining > 0 && millis() < dataTimeout) {
+                  size_t toRead = min(bytesRemaining, bufferSize);
+                  size_t bytesRead = client->read(buffer, toRead);
+
+                  if (bytesRead > 0) {
+                      outputFile.write(buffer, bytesRead);
+                      bytesRemaining -= bytesRead;
+                      totalBytesProcessed += bytesRead;
+
+                      display.showProgressBar((totalBytesProcessed  100) / max(contentLength, (int)totalBytesProcessed));
+                  }
+
+                  // Small delay to prevent watchdog reset
+                  if (bytesRemaining > bufferSize) {
+                      delay(1);
+                  }
+              }
+              client->read(); client->read(); // Skip \r\n
+          }
+      } else if (contentLength > 0) {
+          while (totalBytesProcessed < contentLength && millis() < dataTimeout) {
+              size_t toRead = min((size_t)bufferSize, contentLength - totalBytesProcessed);
+              size_t bytesRead = client->read(buffer, toRead);
+
+              if (bytesRead > 0) {
+                  outputFile.write(buffer, bytesRead);
+                  totalBytesProcessed += bytesRead;
+                  display.showProgressBar((totalBytesProcessed  100) / contentLength);
+              }
+
+              // Small delay to prevent watchdog reset
+              if (totalBytesProcessed < contentLength - bufferSize) {
+                  delay(1);
+              }
+          }
+      }
+
+      free(buffer);
+      outputFile.close();
+      delete client;
+
+      if (totalBytesProcessed > 0) {
+          // Keep showing 100% progress
+          display.showProgressBar(100);
+          delay(500); // Show 100% for a moment
+
+          // Transfer file first
+          sendFileToComputer("/output.mp3");
+          delay(1000); // Wait for transfer to complete
+
+          // Now play the audio
+          playAudioFile("/output.mp3");
+      } else {
+          display.showResponse(conversation.query, "Error: No audio received");
+      }
+  }
+
+  // =============== Final Output ===============
+  void sendFileToComputer(const char filename) {
+      File file = SPIFFS.open(filename, "r");
+      if (!file) {
+          Serial.println("Failed to open file for reading");
+          return;
+      }
+
+      size_t fileSize = file.size();
+
+      // Make sure previous serial data is cleared
+      while(Serial.available()) {
+          Serial.read();
+      }
+      Serial.flush();
+      delay(500);
+
+      // Start transfer protocol
+      Serial.println("START_OF_FILE");
+      delay(250); // Wait for Python to catch up
+
+      Serial.println(fileSize);
+      delay(250); // Wait for Python to process file size
+
+      // Send file in very small chunks with verification
+      const size_t CHUNK_SIZE = 128; // Smaller chunks
+      uint8_t buffer[CHUNK_SIZE];
+      size_t totalSent = 0;
+      size_t chunks = 0;
+
+      while (totalSent < fileSize) {
+          size_t toRead = min(CHUNK_SIZE, fileSize - totalSent);
+          size_t bytesRead = file.read(buffer, toRead);
+
+          if (bytesRead > 0) {
+              Serial.write(buffer, bytesRead);
+              totalSent += bytesRead;
+              chunks++;
+
+              // Add small delay every few chunks
+              if (chunks % 8 == 0) {
+                  delay(5);
+                  Serial.flush();
+              }
+
+              // Progress feedback
+              if (chunks % 64 == 0) {
+                  Serial.printf("\nSent %u of %u bytes\n", totalSent, fileSize);
+              }
+          }
+      }
+
+      file.close();
+
+      // Ensure all data is sent
+      Serial.flush();
+      delay(500);
+
+      Serial.println("\nEND_OF_FILE");
+      Serial.flush();
+      delay(500);
+  }
+
+  // =============== Setup and Main Loop ===============
+  void setup() {
+      Serial.begin(115200);
+
+      display.init();  // This will show initial screen
+      Serial.println("TFT initialized");
+
+      initMicI2S();
+      Serial.println("Microphone I2S initialized");
+
+      initSpeakerI2S();
+      Serial.println("Speaker I2S initialized");
+
+      WiFi.begin(ssid, password);
+      while (WiFi.status() != WL_CONNECTED) {
+          delay(1000);
+          Serial.println("Connecting to Wifi...");
+      }
+      Serial.println("Connected to Wifi");
+
+      if (!SPIFFS.begin(true)) return;
+
+      display.showInitialScreen();
+
+      pinMode(BUTTON_PIN, INPUT_PULLUP);
+  }
+
+
+  void loop() {
+      static unsigned long lastDebounceTime = 0;
+      const unsigned long debounceDelay = 200;
+
+      if (digitalRead(BUTTON_PIN) == LOW) {
+          if ((millis() - lastDebounceTime) > debounceDelay) {
+              recordAudio();
+              sendToSpeechAPI();
+              lastDebounceTime = millis();
+          }
+      }
+  }
+                
+        </code>
+            </pre>
+        </div>
 
 
 
